@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sistema de Votación Multipregunta Controlado - SINESSS</title>
+  <title>Sistema de Votación Multipregunta por Región y Base - SINESSS</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
@@ -48,7 +48,7 @@
         <span>ASISTENCIA GLOBAL: <b id="asistencia-conteo" class="text-amber-400">0/0</b></span>
       </div>
 
-      <!-- PANEL DE CONTROL: HABILITACIÓN Y VISUALIZACIÓN POR PREGUNTA -->
+      <!-- PANEL DE CONTROL: HABILITACIÓN Y VISUALIZACIÓN POR PREGUNTA / SECCIÓN -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 my-3 bg-slate-900 p-3 rounded-lg border border-slate-800">
         <!-- Ver pregunta en tablero -->
         <div class="flex flex-wrap items-center gap-2">
@@ -132,19 +132,28 @@
 
       </div>
 
-      <!-- SECCIÓN 2: RESULTADOS DETALLADOS POR BASES Y CARGOS (DE LA PREGUNTA ACTIVA) -->
+      <!-- SECCIÓN 2A: RESUMEN POR REGIÓN (PREGUNTA SELECCIONADA) -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 mt-4">
+        <h3 class="text-xs font-bold text-cyan-400 mb-3 tracking-wider flex items-center gap-2 border-b border-slate-800 pb-2">
+          <span>🗺️ DESGLOSE DE RESULTADOS POR REGIÓN (PREGUNTA SELECCIONADA)</span>
+        </h3>
+        <div id="contenedor-regiones-detalle" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        </div>
+      </div>
+
+      <!-- SECCIÓN 2B: RESULTADOS DETALLADOS POR BASES Y REGIÓN (PREGUNTA ACTIVA) -->
       <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 mt-4">
         <h3 class="text-xs font-bold text-amber-400 mb-3 tracking-wider flex items-center gap-2 border-b border-slate-800 pb-2">
-          <span>🏛️ DESGLOSE DETALLADO DE RESULTADOS POR BASES (PREGUNTA SELECCIONADA)</span>
+          <span>🏛️ DESGLOSE DETALLADO DE RESULTADOS POR BASES Y REGIÓN (PREGUNTA SELECCIONADA)</span>
         </h3>
         <div id="contenedor-bases-detalle" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         </div>
       </div>
 
-      <!-- SECCIÓN 3: REPORTE GENERAL CONSOLIDADO DE TODAS LAS PREGUNTAS -->
+      <!-- SECCIÓN 3: REPORTE GENERAL CONSOLIDADO DE TODAS LAS PREGUNTAS (POR REGIÓN Y BASE) -->
       <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 mt-6">
         <h3 class="text-xs font-bold text-cyan-400 mb-3 tracking-wider flex items-center gap-2 border-b border-slate-800 pb-2">
-          <span>📊 REPORTE GENERAL CONSOLIDADO (TODAS LAS PREGUNTAS)</span>
+          <span>📊 REPORTE GENERAL CONSOLIDADO POR PREGUNTA, REGIÓN Y BASE</span>
         </h3>
         <div id="contenedor-reporte-general" class="space-y-4">
         </div>
@@ -159,7 +168,7 @@
       <div class="text-center border-b border-slate-800 pb-4">
         <span class="text-xs bg-indigo-900/60 text-indigo-300 px-3 py-1 rounded-full border border-indigo-700">FORMULARIO VOTANTE</span>
         <h2 class="text-amber-400 font-bold text-base mt-3">REGISTRO DE VOTO MULTIPREGUNTA</h2>
-        <p class="text-xs text-slate-400 mt-1">Solo podrás votar en las preguntas que estén habilitadas.</p>
+        <p class="text-xs text-slate-400 mt-1">Selecciona tus datos y vota en las preguntas habilitadas.</p>
       </div>
 
       <div>
@@ -169,7 +178,17 @@
       </div>
 
       <div>
-        <label class="block text-xs font-bold text-amber-400 mb-1">2. Bases *</label>
+        <label class="block text-xs font-bold text-amber-400 mb-1">2. Región *</label>
+        <select id="select-region" class="w-full bg-slate-900 border border-slate-700 text-white p-3 rounded-lg focus:outline-none focus:border-amber-400 text-sm">
+          <option value="">Elige una Región...</option>
+          <option value="LIMA METROPOLITANA">LIMA METROPOLITANA</option>
+          <option value="LIMA PROVINCIAS">LIMA PROVINCIAS</option>
+          <option value="PROVINCIA">PROVINCIA</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-amber-400 mb-1">3. Bases *</label>
         <select id="select-base" class="w-full bg-slate-900 border border-slate-700 text-white p-3 rounded-lg focus:outline-none focus:border-amber-400 text-sm">
           <option value="">Elige una Base...</option>
           <option value="HIV SABOGAL">HIV SABOGAL</option>
@@ -185,7 +204,7 @@
       </div>
 
       <div>
-        <label class="block text-xs font-bold text-amber-400 mb-1">3. Cargo *</label>
+        <label class="block text-xs font-bold text-amber-400 mb-1">4. Cargo *</label>
         <select id="select-cargo" class="w-full bg-slate-900 border border-slate-700 text-white p-3 rounded-lg focus:outline-none focus:border-amber-400 text-sm">
           <option value="">Elige tu Cargo...</option>
           <option value="SECRETARIO">SECRETARIO</option>
@@ -199,7 +218,7 @@
       </div>
 
       <button type="button" onclick="registrarVotoLocal()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition text-sm mt-4">
-        REGISTRAR MIS VOTOS HABILITADOS
+        ENVIAR VOTOS HABILITADOS
       </button>
     </div>
   </main>
@@ -209,7 +228,7 @@
     <div class="bg-slate-950 border border-slate-800 rounded-xl p-6 shadow-2xl space-y-4">
       <h2 class="text-amber-400 font-bold text-base border-b border-slate-800 pb-2">🔗 Conectar Google Sheets (Enlace CSV)</h2>
       <p class="text-xs text-slate-300 leading-relaxed">
-        Pega aquí la URL publicada en la web como <b>CSV</b> desde tu Google Sheet de respuestas. El sistema solo actualizará las preguntas que tengas habilitadas en el tablero:
+        Pega aquí la URL publicada en la web como <b>CSV</b> desde tu Google Sheet de respuestas (incluyendo columnas de Licenciado, Región, Base, Cargo y las preguntas):
       </p>
       
       <div class="space-y-2">
@@ -228,7 +247,7 @@
 
   <!-- MODAL EDITAR PREGUNTAS -->
   <dialog id="modal-preguntas" class="bg-slate-950 border border-slate-800 text-slate-200 p-6 rounded-xl max-w-lg w-full backdrop:bg-black/80">
-    <h3 class="text-amber-400 font-bold mb-1 text-sm">Configurar Preguntas de la Plenaria (3 a 4)</h3>
+    <h3 class="text-amber-400 font-bold mb-1 text-sm">Configurar Preguntas / Secciones (3 a 4)</h3>
     <p class="text-[11px] text-slate-400 mb-3">Escribe una pregunta por línea tal como figuran en tu formulario.</p>
     <textarea id="txt-preguntas" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-xs text-white h-40 mb-4 focus:outline-none focus:border-amber-400 font-mono"></textarea>
     <div class="flex justify-end gap-2">
@@ -266,6 +285,12 @@
       "Quinto Mercedes"
     ];
 
+    const regionesValidas = [
+      "LIMA METROPOLITANA",
+      "LIMA PROVINCIAS",
+      "PROVINCIA"
+    ];
+
     const basesValidas = [
       "HIV SABOGAL", "H III SUA-ANG", "H II M TORRES", 
       "HOSPITAL ALMANZOR AGUINAGA", 
@@ -280,9 +305,7 @@
       "4. ¿Ratifica los acuerdos adoptados en la última asamblea extraordinaria?"
     ];
 
-    // Control de estado individual por pregunta (true = abierta, false = cerrada)
     let estadoPreguntas = [true, true, true, true];
-
     let preguntaActivaIndex = 0;
     let votos = {}; 
     let respuestasFormularioLocal = {}; 
@@ -290,7 +313,7 @@
     let timerSync = null;
     let votacionBloqueada = false;
 
-    const bc = new BroadcastChannel('votacion_channel_multi_ctrl');
+    const bc = new BroadcastChannel('votacion_channel_multi_region_v1');
 
     window.addEventListener('DOMContentLoaded', () => {
       let padronGuardado = localStorage.getItem('padron_voto_multi');
@@ -307,18 +330,24 @@
           const parsed = JSON.parse(preguntasGuardadas);
           if (Array.isArray(parsed) && parsed.length > 0) {
             preguntas = parsed;
-            // Asegurar que el arreglo de estados coincida en longitud
-            estadoPreguntas = preguntas.map((_, i) => estadoPreguntas[i] !== undefined ? estadoPreguntas[i] : true);
           }
         } catch(e) {}
+      } else {
+        localStorage.setItem('preguntas_voto_multi', JSON.stringify(preguntas));
       }
 
       let estadosGuardados = localStorage.getItem('estados_preguntas_multi');
       if (estadosGuardados) {
         try {
           const parsed = JSON.parse(estadosGuardados);
-          if (Array.isArray(parsed)) estadoPreguntas = parsed;
+          if (Array.isArray(parsed) && parsed.length === preguntas.length) {
+            estadoPreguntas = parsed;
+          } else {
+            estadoPreguntas = preguntas.map(() => true);
+          }
         } catch(e) {}
+      } else {
+        estadoPreguntas = preguntas.map(() => true);
       }
 
       let votosGuardados = localStorage.getItem('votos_voto_multi');
@@ -388,26 +417,40 @@
       });
     }
 
-    // Renderiza tanto los botones para VER pregunta como los interruptores para HABILITAR/CERRAR recepción
+    function normalizarRegion(valor) {
+      if (!valor) return "SIN REGIÓN";
+      const up = valor.trim().toUpperCase();
+      if (up.includes("METROPOLITANA")) return "LIMA METROPOLITANA";
+      if (up.includes("LIMA") && up.includes("PROVINCIA")) return "LIMA PROVINCIAS";
+      if (up.includes("PROVINCIA")) return "PROVINCIA";
+      return up;
+    }
+
+    function normalizarBase(valor) {
+      if (!valor) return "OTRAS BASES";
+      const up = valor.trim().toUpperCase();
+      const matchBase = basesValidas.find(vb => vb.toUpperCase() === up || up.includes(vb.toUpperCase()) || vb.toUpperCase().includes(up));
+      return matchBase ? matchBase : "OTRAS BASES";
+    }
+
     function renderizarControlesPreguntas() {
       const tabsCont = document.getElementById('selector-preguntas-tabs');
       const ctrlCont = document.getElementById('control-habilitacion-preguntas');
       tabsCont.innerHTML = '';
       ctrlCont.innerHTML = '';
 
+      if (!preguntas || preguntas.length === 0) return;
+
       preguntas.forEach((_, idx) => {
-        // 1. Botón de pestaña para ver resultados
         const btnVer = document.createElement('button');
         btnVer.onclick = () => { preguntaActivaIndex = idx; renderizarControlesPreguntas(); renderizarTablero(); };
         btnVer.className = `px-3 py-1 text-xs rounded font-bold transition ${preguntaActivaIndex === idx ? 'bg-amber-600 text-white shadow-lg ring-1 ring-amber-300' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`;
         btnVer.innerText = `P${idx + 1}`;
         tabsCont.appendChild(btnVer);
 
-        // 2. Botón interruptor para habilitar/cerrar recepción de respuestas
         const estaAbierta = estadoPreguntas[idx] !== false;
         const btnHabilitar = document.createElement('button');
         btnHabilitar.onclick = () => toggleEstadoPregunta(idx);
-        btnHabilitar.title = estaAbierta ? `Clic para cerrar recepción de P${idx + 1}` : `Clic para abrir recepción de P${idx + 1}`;
         btnHabilitar.className = `px-2.5 py-1 text-[11px] rounded font-bold border transition flex items-center gap-1 ${
           estaAbierta 
             ? 'bg-emerald-950/80 text-emerald-400 border-emerald-700 hover:bg-emerald-900' 
@@ -445,9 +488,9 @@
               <span class="text-[10px] text-emerald-400 font-bold">🟢 Habilitada</span>
             </div>
             <div class="grid grid-cols-3 gap-2">
-              <button type="button" onclick="marcarRespuestaForm(${idx}, 'A FAVOR')" id="btn-p${idx}-favor" class="p-2 border border-emerald-600/50 bg-emerald-950/30 text-emerald-400 rounded font-bold text-[11px] hover:bg-emerald-900/50 transition ${respActual === 'A FAVOR' ? 'ring-2 ring-white' : ''}">A FAVOR</button>
-              <button type="button" onclick="marcarRespuestaForm(${idx}, 'EN CONTRA')" id="btn-p${idx}-contra" class="p-2 border border-rose-600/50 bg-rose-950/30 text-rose-400 rounded font-bold text-[11px] hover:bg-rose-900/50 transition ${respActual === 'EN CONTRA' ? 'ring-2 ring-white' : ''}">EN CONTRA</button>
-              <button type="button" onclick="marcarRespuestaForm(${idx}, 'ABSTENCION')" id="btn-p${idx}-abstencion" class="p-2 border border-amber-600/50 bg-amber-950/30 text-amber-400 rounded font-bold text-[11px] hover:bg-amber-900/50 transition ${respActual === 'ABSTENCION' ? 'ring-2 ring-white' : ''}">ABSTENCION</button>
+              <button type="button" onclick="marcarRespuestaForm(${idx}, 'A FAVOR')" class="p-2 border border-emerald-600/50 bg-emerald-950/30 text-emerald-400 rounded font-bold text-[11px] hover:bg-emerald-900/50 transition ${respActual === 'A FAVOR' ? 'ring-2 ring-white' : ''}">A FAVOR</button>
+              <button type="button" onclick="marcarRespuestaForm(${idx}, 'EN CONTRA')" class="p-2 border border-rose-600/50 bg-rose-950/30 text-rose-400 rounded font-bold text-[11px] hover:bg-rose-900/50 transition ${respActual === 'EN CONTRA' ? 'ring-2 ring-white' : ''}">EN CONTRA</button>
+              <button type="button" onclick="marcarRespuestaForm(${idx}, 'ABSTENCION')" class="p-2 border border-amber-600/50 bg-amber-950/30 text-amber-400 rounded font-bold text-[11px] hover:bg-amber-900/50 transition ${respActual === 'ABSTENCION' ? 'ring-2 ring-white' : ''}">ABSTENCION</button>
             </div>
           `;
         } else {
@@ -456,7 +499,7 @@
               <label class="block text-xs font-bold text-slate-400">${preg}</label>
               <span class="text-[10px] text-rose-400 font-bold">🔒 Recepción Cerrada</span>
             </div>
-            <p class="text-[11px] text-slate-500 italic">Esta pregunta no admite respuestas en este momento.</p>
+            <p class="text-[11px] text-slate-500 italic">Esta pregunta/sección no admite respuestas en este momento.</p>
           `;
         }
         contenedor.appendChild(div);
@@ -478,14 +521,15 @@
         return;
       }
       const nombre = document.getElementById('select-votante').value;
+      const region = document.getElementById('select-region').value;
       const base = document.getElementById('select-base').value;
       const cargo = document.getElementById('select-cargo').value;
 
       if (!nombre) return alert("Selecciona un Licenciado(A)");
+      if (!region) return alert("Selecciona una Región");
       if (!base) return alert("Selecciona una Base");
       if (!cargo) return alert("Selecciona un Cargo");
 
-      // Filtrar solo las respuestas de las preguntas que están abiertas
       let votosValidos = {};
       for (let pIdx in respuestasFormularioLocal) {
         if (estadoPreguntas[pIdx] !== false) {
@@ -498,8 +542,9 @@
       }
 
       if (!votos[nombre]) {
-        votos[nombre] = { base: base, cargo: cargo, respuestas: {} };
+        votos[nombre] = { region: region, base: base, cargo: cargo, respuestas: {} };
       }
+      votos[nombre].region = region;
       votos[nombre].base = base;
       votos[nombre].cargo = cargo;
 
@@ -549,11 +594,13 @@
     }
 
     function renderizarTablero() {
-      if(preguntas[preguntaActivaIndex]) {
+      if (preguntas.length > 0 && preguntas[preguntaActivaIndex]) {
         document.getElementById('titulo-asunto').innerText = preguntas[preguntaActivaIndex];
+      } else {
+        document.getElementById('titulo-asunto').innerText = "No hay preguntas configuradas";
+        return;
       }
 
-      // Actualizar etiqueta visual de si esta pregunta específica recibe votos o no
       const badge = document.getElementById('badge-estado-pregunta');
       const estaAbierta = (estadoPreguntas[preguntaActivaIndex] !== false) && !votacionBloqueada;
       if (estaAbierta) {
@@ -568,7 +615,11 @@
       let countSec = 0, countDel = 0, countCen = 0;
       let listFavor = [], listContra = [], listAbstencion = [], listSinVotar = [];
       let agruparPorBase = {}; 
-
+      let agruparPorRegion = {
+        "LIMA METROPOLITANA": { favor: [], contra: [], abstencion: [], bases: new Set() },
+        "LIMA PROVINCIAS": { favor: [], contra: [], abstencion: [], bases: new Set() },
+        "PROVINCIA": { favor: [], contra: [], abstencion: [], bases: new Set() }
+      };
       let totalAsistenciaGlobal = 0;
 
       padron.forEach(nombre => {
@@ -586,29 +637,40 @@
 
         if (registro && registro.respuestas && registro.respuestas[preguntaActivaIndex]) {
           const v = registro.respuestas[preguntaActivaIndex];
-          let b = (registro.base && registro.base.trim() !== "") ? registro.base.trim().toUpperCase() : "OTRAS BASES";
-          const matchBase = basesValidas.find(vb => vb.toUpperCase() === b || b.includes(vb.toUpperCase()) || vb.toUpperCase().includes(b));
-          b = matchBase ? matchBase : "OTRAS BASES";
+          const b = normalizarBase(registro.base);
+          const reg = normalizarRegion(registro.region);
+          const c = (registro.cargo && registro.cargo.trim() !== "") ? registro.cargo.trim().toUpperCase() : "SECRETARIO";
 
           if (!agruparPorBase[b]) {
-            agruparPorBase[b] = { favor: [], contra: [], abstencion: [] };
+            agruparPorBase[b] = { regiones: new Set(), favor: [], contra: [], abstencion: [] };
+          }
+          if (reg !== "SIN REGIÓN") {
+            agruparPorBase[b].regiones.add(reg);
           }
 
-          const c = (registro.cargo && registro.cargo.trim() !== "") ? registro.cargo.trim().toUpperCase() : "SECRETARIO";
-          const detalleTexto = `${nombre} <span class="text-[10px] text-amber-400/90">(${c})</span>`;
+          if (!agruparPorRegion[reg]) {
+            agruparPorRegion[reg] = { favor: [], contra: [], abstencion: [], bases: new Set() };
+          }
+          agruparPorRegion[reg].bases.add(b);
+
+          const etiquetaRegion = reg !== "SIN REGIÓN" ? ` · <span class="text-cyan-400">${reg}</span>` : "";
+          const detalleTexto = `${nombre} <span class="text-[10px] text-amber-400/90">(${c}${etiquetaRegion})</span>`;
 
           if (v === 'A FAVOR') {
             favor++;
             listFavor.push(`• ${detalleTexto}`);
-            agruparPorBase[b].favor.push({nombre, cargo: c});
+            agruparPorBase[b].favor.push({nombre, cargo: c, region: reg});
+            agruparPorRegion[reg].favor.push({nombre, cargo: c, base: b});
           } else if (v === 'EN CONTRA') {
             contra++;
             listContra.push(`• ${detalleTexto}`);
-            agruparPorBase[b].contra.push({nombre, cargo: c});
+            agruparPorBase[b].contra.push({nombre, cargo: c, region: reg});
+            agruparPorRegion[reg].contra.push({nombre, cargo: c, base: b});
           } else if (v === 'ABSTENCION') {
             abstencion++;
             listAbstencion.push(`• ${detalleTexto}`);
-            agruparPorBase[b].abstencion.push({nombre, cargo: c});
+            agruparPorBase[b].abstencion.push({nombre, cargo: c, region: reg});
+            agruparPorRegion[reg].abstencion.push({nombre, cargo: c, base: b});
           }
         } else {
           listSinVotar.push(`• ${nombre}`);
@@ -633,6 +695,33 @@
       document.getElementById('lista-abstencion').innerHTML = listAbstencion.join('<br>') || '<span class="text-slate-600">Ninguno</span>';
       document.getElementById('lista-sinvotar').innerHTML = listSinVotar.join('<br>') || '<span class="text-slate-600">Ninguno</span>';
 
+      // RENDERIZAR DESGLOSE POR REGIÓN (PREGUNTA ACTIVA)
+      const contenedorRegiones = document.getElementById('contenedor-regiones-detalle');
+      contenedorRegiones.innerHTML = '';
+      Object.keys(agruparPorRegion).forEach(regNombre => {
+        const rData = agruparPorRegion[regNombre];
+        const totalReg = rData.favor.length + rData.contra.length + rData.abstencion.length;
+        if (regNombre === "SIN REGIÓN" && totalReg === 0) return;
+
+        const basesList = Array.from(rData.bases).join(', ') || 'Sin bases registradas';
+        const cardReg = document.createElement('div');
+        cardReg.className = "bg-slate-950 border border-slate-800 rounded-lg p-3 space-y-2";
+        cardReg.innerHTML = `
+          <div class="flex justify-between items-center border-b border-slate-800 pb-1">
+            <span class="text-xs font-bold text-cyan-400">🗺️ ${regNombre}</span>
+            <span class="text-[10px] text-slate-400">Total: <b>${totalReg}</b></span>
+          </div>
+          <div class="text-[10px] text-slate-400">Bases: <span class="text-slate-200">${basesList}</span></div>
+          <div class="grid grid-cols-3 gap-1 text-center pt-1 text-[11px]">
+            <div class="bg-emerald-950/50 border border-emerald-800/50 rounded p-1 text-emerald-400">A Favor<br><b>${rData.favor.length}</b></div>
+            <div class="bg-rose-950/50 border border-rose-800/50 rounded p-1 text-rose-400">En Contra<br><b>${rData.contra.length}</b></div>
+            <div class="bg-amber-950/50 border border-amber-800/50 rounded p-1 text-amber-400">Abstención<br><b>${rData.abstencion.length}</b></div>
+          </div>
+        `;
+        contenedorRegiones.appendChild(cardReg);
+      });
+
+      // RENDERIZAR DESGLOSE POR BASES Y REGIÓN (PREGUNTA ACTIVA)
       const contenedorBases = document.getElementById('contenedor-bases-detalle');
       contenedorBases.innerHTML = '';
       const basesKeys = Object.keys(agruparPorBase);
@@ -643,18 +732,22 @@
         basesKeys.forEach(baseNombre => {
           const data = agruparPorBase[baseNombre];
           const totalBase = data.favor.length + data.contra.length + data.abstencion.length;
+          const textoRegiones = Array.from(data.regiones).join(' / ') || 'SIN REGIÓN';
 
           if (totalBase > 0) {
             const renderItems = (lista) => {
               if (lista.length === 0) return '<div class="text-slate-600 italic">Ninguno</div>';
-              return lista.map(item => `<div>• ${item.nombre} <span class="text-[10px] text-amber-400">(${item.cargo})</span></div>`).join('');
+              return lista.map(item => `<div>• ${item.nombre} <span class="text-[10px] text-amber-400">(${item.cargo})</span> <span class="text-[10px] text-cyan-400">[${item.region}]</span></div>`).join('');
             };
 
             const tarjeta = document.createElement('div');
             tarjeta.className = "bg-slate-950 border border-slate-800 rounded-lg p-3 space-y-2";
             tarjeta.innerHTML = `
-              <div class="flex justify-between items-center border-b border-slate-800 pb-1">
-                <span class="text-xs font-bold text-amber-400">🏛️ ${baseNombre}</span>
+              <div class="flex flex-wrap justify-between items-center border-b border-slate-800 pb-1 gap-1">
+                <div>
+                  <span class="text-xs font-bold text-amber-400 block">🏛️ ${baseNombre}</span>
+                  <span class="text-[10px] text-cyan-400 font-bold">🗺️ Región: ${textoRegiones}</span>
+                </div>
                 <span class="text-[10px] text-slate-400">Total votos: <b>${totalBase}</b></span>
               </div>
               <div class="space-y-1 text-[11px]">
@@ -680,34 +773,39 @@
 
       preguntas.forEach((pregTexto, pIdx) => {
         let fv = 0, cv = 0, av = 0;
-        let detalleBasesP = {};
+        let detalleRegionBaseP = {};
 
         padron.forEach(nombre => {
           const reg = votos[nombre];
           if (reg && reg.respuestas && reg.respuestas[pIdx]) {
             const v = reg.respuestas[pIdx];
-            let b = reg.base ? reg.base.toUpperCase() : "OTRAS BASES";
-            const matchB = basesValidas.find(vb => vb.toUpperCase() === b || b.includes(vb.toUpperCase()));
-            b = matchB ? matchB : "OTRAS BASES";
+            const b = normalizarBase(reg.base);
+            const r = normalizarRegion(reg.region);
+            const clave = `${r} — ${b}`;
 
-            if(!detalleBasesP[b]) detalleBasesP[b] = {favor: [], contra: [], abstencion: []};
+            if(!detalleRegionBaseP[clave]) {
+              detalleRegionBaseP[clave] = { region: r, base: b, favor: [], contra: [], abstencion: [] };
+            }
 
             const infoVotante = `${nombre} (${reg.cargo || 'SECRETARIO'})`;
-            if(v === 'A FAVOR') { fv++; detalleBasesP[b].favor.push(infoVotante); }
-            else if(v === 'EN CONTRA') { cv++; detalleBasesP[b].contra.push(infoVotante); }
-            else if(v === 'ABSTENCION') { av++; detalleBasesP[b].abstencion.push(infoVotante); }
+            if(v === 'A FAVOR') { fv++; detalleRegionBaseP[clave].favor.push(infoVotante); }
+            else if(v === 'EN CONTRA') { cv++; detalleRegionBaseP[clave].contra.push(infoVotante); }
+            else if(v === 'ABSTENCION') { av++; detalleRegionBaseP[clave].abstencion.push(infoVotante); }
           }
         });
 
         const card = document.createElement('div');
         card.className = "bg-slate-950 border border-slate-800 rounded-lg p-4 space-y-3";
         
-        let htmlBases = "";
-        Object.keys(detalleBasesP).forEach(bName => {
-          const dt = detalleBasesP[bName];
-          htmlBases += `
-            <div class="bg-slate-900/80 p-2 rounded border border-slate-800 text-[11px] space-y-1">
-              <div class="font-bold text-amber-400">🏛️ ${bName}</div>
+        let htmlDetalle = "";
+        Object.keys(detalleRegionBaseP).sort().forEach(clave => {
+          const dt = detalleRegionBaseP[clave];
+          htmlDetalle += `
+            <div class="bg-slate-900/80 p-2.5 rounded border border-slate-800 text-[11px] space-y-1">
+              <div class="flex flex-wrap justify-between items-center border-b border-slate-800/80 pb-1">
+                <span class="font-bold text-amber-400">🏛️ ${dt.base}</span>
+                <span class="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800">🗺️ ${dt.region}</span>
+              </div>
               <div class="text-emerald-400">A Favor (${dt.favor.length}): <span class="text-slate-300">${dt.favor.join(', ') || 'Ninguno'}</span></div>
               <div class="text-rose-400">En Contra (${dt.contra.length}): <span class="text-slate-300">${dt.contra.join(', ') || 'Ninguno'}</span></div>
               <div class="text-amber-400">Abstención (${dt.abstencion.length}): <span class="text-slate-300">${dt.abstencion.join(', ') || 'Ninguno'}</span></div>
@@ -730,7 +828,7 @@
             </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-            ${htmlBases || '<span class="text-slate-500 italic text-xs">Sin votos registrados para esta pregunta.</span>'}
+            ${htmlDetalle || '<span class="text-slate-500 italic text-xs">Sin votos registrados para esta pregunta.</span>'}
           </div>
         `;
         contenedorReporte.appendChild(card);
@@ -765,11 +863,10 @@
         procesarCSV(data);
         if(status) status.innerText = `🟢 Sincronizado en tiempo real (${new Date().toLocaleTimeString()})`;
       } catch (err) {
-        if(status) status.innerText = `🔴 Error de sincronización: Asegúrate que la hoja esté 'Publicada en la web' como CSV.`;
+        if(status) status.innerText = `🔴 Error de sincronización: Asegúrate de que la hoja esté 'Publicada en la web' como CSV.`;
       }
     }
 
-    // ANALIZADOR RESPETANDO LA HABILITACIÓN POR PREGUNTA
     function procesarCSV(text) {
       if (votacionBloqueada) return;
       const lineas = text.split('\n');
@@ -779,6 +876,7 @@
         const cols = linea.split(',').map(c => c.replace(/^"|"$/g, '').trim());
         if (cols.length >= 2) {
           let nombreEncontrado = "";
+          let regionEncontrada = "";
           let baseEncontrada = "";
           let cargoEncontrado = "SECRETARIO"; 
           let respuestasFila = {};
@@ -789,6 +887,10 @@
             const coincidePadron = padron.find(p => p.toLowerCase() === colVal.toLowerCase() || p.toLowerCase().includes(colVal.toLowerCase()) || colVal.toLowerCase().includes(p.toLowerCase()));
             if (coincidePadron && !nombreEncontrado) {
               nombreEncontrado = coincidePadron;
+            }
+
+            if (valUp === 'LIMA METROPOLITANA' || valUp === 'LIMA PROVINCIAS' || valUp === 'PROVINCIA') {
+              regionEncontrada = valUp;
             }
 
             if (valUp === 'SECRETARIO' || valUp === 'DELEGADO' || valUp.includes('CEN')) {
@@ -809,22 +911,19 @@
             }
           });
 
-          if (!baseEncontrada && cols.length >= 3) {
-            for (let i = 1; i < cols.length; i++) {
-              const posibleBase = cols[i].toUpperCase();
-              const matchB = basesValidas.find(vb => vb.toUpperCase() === posibleBase || posibleBase.includes(vb.toUpperCase()));
-              if (matchB) { baseEncontrada = matchB; break; }
-            }
-          }
-
           if (nombreEncontrado && Object.keys(respuestasFila).length > 0) {
             if(!votos[nombreEncontrado]) {
-              votos[nombreEncontrado] = { base: baseEncontrada ? baseEncontrada.toUpperCase() : "OTRAS BASES", cargo: cargoEncontrado.toUpperCase(), respuestas: {} };
+              votos[nombreEncontrado] = {
+                region: regionEncontrada || "SIN REGIÓN",
+                base: baseEncontrada ? baseEncontrada.toUpperCase() : "OTRAS BASES",
+                cargo: cargoEncontrado.toUpperCase(),
+                respuestas: {}
+              };
             }
-            votos[nombreEncontrado].base = baseEncontrada ? baseEncontrada.toUpperCase() : votos[nombreEncontrado].base;
+            if (regionEncontrada) votos[nombreEncontrado].region = regionEncontrada;
+            if (baseEncontrada) votos[nombreEncontrado].base = baseEncontrada.toUpperCase();
             votos[nombreEncontrado].cargo = cargoEncontrado.toUpperCase();
             
-            // Solo guardar o actualizar las respuestas de las preguntas cuya recepción esté HABILITADA
             for(let rIdx in respuestasFila) {
               if (estadoPreguntas[rIdx] !== false) {
                 votos[nombreEncontrado].respuestas[rIdx] = respuestasFila[rIdx];
@@ -849,6 +948,7 @@
         document.getElementById('input-csv-url').value = "";
         document.getElementById('status-conexion').innerText = "Estado: Desconectado / Esperando URL...";
         document.getElementById('select-votante').value = "";
+        document.getElementById('select-region').value = "";
         document.getElementById('select-base').value = "";
         document.getElementById('select-cargo').value = "";
         respuestasFormularioLocal = {};
@@ -861,23 +961,22 @@
 
     function simularVotacion() {
       const opciones = ["A FAVOR", "EN CONTRA", "ABSTENCION"];
-      const bases = ["HIV SABOGAL", "H III SUA-ANG", "H II M TORRES", "HOSPITAL ALMANZOR AGUINAGA", "G HN REBAGLIAT", "HIII YANAHUARA", "HN C SEGUIN", "G.HN ALMENARA", "D HIII IQUITOS"];
       const cargos = ["SECRETARIO", "DELEGADO", "SECRETARIO DE CEN SINESSS"];
       
       padron.forEach(n => {
-        if(!votos[n]) votos[n] = { base: "", cargo: "", respuestas: {} };
-        votos[n].base = bases[Math.floor(Math.random() * bases.length)];
+        if(!votos[n]) votos[n] = { region: "", base: "", cargo: "", respuestas: {} };
+        votos[n].region = regionesValidas[Math.floor(Math.random() * regionesValidas.length)];
+        votos[n].base = basesValidas[Math.floor(Math.random() * basesValidas.length)];
         votos[n].cargo = cargos[Math.floor(Math.random() * cargos.length)];
         
         preguntas.forEach((_, pIdx) => {
-          // Simula únicamente en las preguntas abiertas
           if (estadoPreguntas[pIdx] !== false) {
             votos[n].respuestas[pIdx] = opciones[Math.floor(Math.random() * opciones.length)];
           }
         });
       });
       guardarYNotificar();
-      alert("¡Simulación realizada en las preguntas habilitadas!");
+      alert("¡Simulación realizada en las preguntas habilitadas con Región y Base!");
     }
 
     function abrirModalPreguntas() {
