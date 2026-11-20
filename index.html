@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Votación Multipregunta Controlado - SINESSS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+    body { font-family: 'Share Tech Mono', monospace; background-color: #0b0f19; color: #e2e8f0; }
+    .led-text { text-shadow: 0 0 8px currentColor; }
+  </style>
+</head>
+<body class="p-4">
+
+  <!-- BARRA DE NAVEGACIÓN -->
+  <header class="flex flex-wrap items-center justify-between gap-2 mb-4 bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+    <div class="flex items-center gap-2">
+      <span id="indicador-estado" class="w-3 h-3 bg-emerald-500 rounded-full animate-pulse"></span>
+      <h1 class="text-sm md:text-base font-bold tracking-wider text-slate-200">SISTEMA DE VOTACIÓN MULTIPREGUNTA</h1>
+    </div>
+    
+    <div class="flex flex-wrap gap-2 text-xs md:text-sm">
+      <button onclick="cambiarVista('vista-board')" id="btn-vista-board" class="px-3 py-1.5 bg-indigo-600 text-white rounded font-bold transition">📺 Tablero LED</button>
+      <button onclick="cambiarVista('vista-form')" id="btn-vista-form" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded hover:bg-slate-700 transition">📝 Formulario Votante</button>
+      <button onclick="cambiarVista('vista-gform')" id="btn-vista-gform" class="px-3 py-1.5 bg-slate-800 text-slate-300 rounded hover:bg-slate-700 transition">🔗 Conectar Google Forms</button>
+      <button onclick="simularVotacion()" class="px-3 py-1.5 bg-purple-900/50 text-purple-300 border border-purple-700 rounded hover:bg-purple-800 transition">🎲 Simular</button>
+      <button onclick="toggleBloqueoVotacion()" id="btn-lock" class="px-3 py-1.5 bg-rose-900/60 text-rose-300 border border-rose-700 rounded hover:bg-rose-800 transition">🔒 Cerrar Todo</button>
+      <button onclick="reiniciarVotacion()" class="px-3 py-1.5 bg-amber-600 text-white rounded font-bold hover:bg-amber-500 transition">🗑️ Reset Votos</button>
+      <button onclick="abrirModalPreguntas()" class="px-3 py-1.5 bg-cyan-800 text-cyan-200 rounded hover:bg-cyan-700 transition">❓ Preguntas</button>
+      <button onclick="abrirModalPadron()" class="px-3 py-1.5 bg-emerald-800 text-emerald-200 rounded hover:bg-emerald-700 transition">👥 Padrón</button>
+    </div>
+  </header>
+
+  <!-- VISTA 1: TABLERO LED -->
+  <main id="vista-board" class="block space-y-4">
+    <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 shadow-2xl relative">
+      
+      <!-- CABECERA DE SESIÓN CON LOGO A LA IZQUIERDA -->
+      <div class="flex flex-wrap justify-between items-center text-xs text-amber-500/80 mb-2 border-b border-slate-900 pb-3 gap-2">
+        <div class="flex items-center gap-3">
+          <img src="LOGOSINESSS.png" alt="Logo SINESSS" class="w-12 h-12 rounded-full border border-amber-500/50 object-cover shadow-md bg-cyan-900">
+          <div>
+            <span id="fecha-actual" class="block text-[10px] text-slate-400">--/--/--</span>
+            <span class="font-bold tracking-widest uppercase text-amber-400">SINDICATO NACIONAL DE ENFERMERAS DEL SEGURO SOCIAL DE SALUD</span>
+          </div>
+        </div>
+        <span>ASISTENCIA GLOBAL: <b id="asistencia-conteo" class="text-amber-400">0/0</b></span>
+      </div>
+
+      <!-- PANEL DE CONTROL: HABILITACIÓN Y VISUALIZACIÓN POR PREGUNTA -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 my-3 bg-slate-900 p-3 rounded-lg border border-slate-800">
+        <!-- Ver pregunta en tablero -->
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="text-xs font-bold text-amber-400">👁️ VER EN TABLERO:</span>
+          <div id="selector-preguntas-tabs" class="flex flex-wrap gap-1.5"></div>
+        </div>
+        <!-- Habilitar / Deshabilitar recepción por pregunta -->
+        <div class="flex flex-wrap items-center lg:justify-end gap-2 border-t lg:border-t-0 pt-2 lg:pt-0 border-slate-800">
+          <span class="text-xs font-bold text-cyan-400">🎛️ RECEPCIÓN DE VOTOS:</span>
+          <div id="control-habilitacion-preguntas" class="flex flex-wrap gap-1.5"></div>
+        </div>
+      </div>
+
+      <!-- TÍTULO / PREGUNTA ACTUAL Y SU ESTADO -->
+      <div class="text-center py-2">
+        <span id="badge-estado-pregunta" class="text-[11px] px-3 py-0.5 rounded-full font-bold bg-emerald-950 text-emerald-400 border border-emerald-700">
+          🟢 RECEPCIÓN HABILITADA PARA ESTA PREGUNTA
+        </span>
+        <h2 id="titulo-asunto" class="text-amber-400 font-bold text-base md:text-lg mt-2 tracking-wide led-text">
+          Cargando Pregunta...
+        </h2>
+      </div>
+
+      <!-- SECCIÓN 1: RESULTADOS GENERALES DE LA PREGUNTA ACTIVA -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 my-4">
+        
+        <!-- A FAVOR -->
+        <div class="bg-emerald-950/40 border border-emerald-800/60 rounded-lg p-3">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-bold text-emerald-400">TOTAL A FAVOR</span>
+            <span id="cnt-favor" class="text-2xl font-bold text-emerald-400 led-text">0</span>
+          </div>
+          <div id="lista-favor" class="text-xs text-emerald-300/90 space-y-1 max-h-40 overflow-y-auto pr-1"></div>
+        </div>
+
+        <!-- EN CONTRA -->
+        <div class="bg-rose-950/40 border border-rose-800/60 rounded-lg p-3">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-bold text-rose-400">TOTAL EN CONTRA</span>
+            <span id="cnt-contra" class="text-2xl font-bold text-rose-400 led-text">0</span>
+          </div>
+          <div id="lista-contra" class="text-xs text-rose-300/90 space-y-1 max-h-40 overflow-y-auto pr-1"></div>
+        </div>
+
+        <!-- ABSTENCIÓN -->
+        <div class="bg-amber-950/40 border border-amber-800/60 rounded-lg p-3">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-bold text-amber-400">TOTAL ABSTENCIÓN</span>
+            <span id="cnt-abstencion" class="text-2xl font-bold text-amber-400 led-text">0</span>
+          </div>
+          <div id="lista-abstencion" class="text-xs text-amber-300/90 space-y-1 max-h-40 overflow-y-auto pr-1"></div>
+        </div>
+
+        <!-- SIN VOTAR -->
+        <div class="bg-slate-900 border border-slate-800 rounded-lg p-3">
+          <div class="flex justify-between items-center mb-2">
+            <span class="text-xs font-bold text-slate-400">SIN VOTAR</span>
+            <span id="cnt-sinvotar" class="text-2xl font-bold text-slate-200 led-text">0</span>
+          </div>
+          <div id="lista-sinvotar" class="text-xs text-slate-400 space-y-1 max-h-40 overflow-y-auto pr-1"></div>
+        </div>
+
+        <!-- RELOJ, ESTADO Y RESUMEN DE CARGOS -->
+        <div class="bg-slate-900 border border-slate-800 rounded-lg p-3 flex flex-col justify-between">
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <span id="texto-estado-voto" class="text-xs text-emerald-400 font-bold">• SISTEMA ACTIVO</span>
+              <span class="text-[10px] text-slate-400">TOTAL: <b id="cnt-total">0</b></span>
+            </div>
+            <!-- CONTEO POR CARGOS -->
+            <div class="text-[10px] text-slate-300 space-y-0.5 border-t border-slate-800 pt-2 mb-2">
+              <div>Secretarios: <b id="cnt-sec" class="text-amber-400">0</b></div>
+              <div>Delegados: <b id="cnt-del" class="text-amber-400">0</b></div>
+              <div>Sec. CEN Sinesss: <b id="cnt-cen" class="text-amber-400">0</b></div>
+            </div>
+          </div>
+          <div class="text-right">
+            <div id="reloj-digital" class="text-xl font-bold text-amber-400 led-text">00:00:00 PM</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SECCIÓN 2: RESULTADOS DETALLADOS POR BASES Y CARGOS (DE LA PREGUNTA ACTIVA) -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 mt-4">
+        <h3 class="text-xs font-bold text-amber-400 mb-3 tracking-wider flex items-center gap-2 border-b border-slate-800 pb-2">
+          <span>🏛️ DESGLOSE DETALLADO DE RESULTADOS POR BASES (PREGUNTA SELECCIONADA)</span>
+        </h3>
+        <div id="contenedor-bases-detalle" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        </div>
+      </div>
+
+      <!-- SECCIÓN 3: REPORTE GENERAL CONSOLIDADO DE TODAS LAS PREGUNTAS -->
+      <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 mt-6">
+        <h3 class="text-xs font-bold text-cyan-400 mb-3 tracking-wider flex items-center gap-2 border-b border-slate-800 pb-2">
+          <span>📊 REPORTE GENERAL CONSOLIDADO (TODAS LAS PREGUNTAS)</span>
+        </h3>
+        <div id="contenedor-reporte-general" class="space-y-4">
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- VISTA 2: FORMULARIO VOTANTE -->
+  <main id="vista-form" class="hidden max-w-xl mx-auto">
+    <div class="bg-slate-950 border border-slate-800 rounded-xl p-6 shadow-2xl space-y-5">
+      <div class="text-center border-b border-slate-800 pb-4">
+        <span class="text-xs bg-indigo-900/60 text-indigo-300 px-3 py-1 rounded-full border border-indigo-700">FORMULARIO VOTANTE</span>
+        <h2 class="text-amber-400 font-bold text-base mt-3">REGISTRO DE VOTO MULTIPREGUNTA</h2>
+        <p class="text-xs text-slate-400 mt-1">Solo podrás votar en las preguntas que estén habilitadas.</p>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-amber-400 mb-1">1. Seleccionar Licenciado(A) *</label>
+        <select id="select-votante" class="w-full bg-slate-900 border border-slate-700 text-white p-3 rounded-lg focus:outline-none focus:border-amber-400 text-sm">
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-amber-400 mb-1">2. Bases *</label>
+        <select id="select-base" class="w-full bg-slate-900 border border-slate-700 text-white p-3 rounded-lg focus:outline-none focus:border-amber-400 text-sm">
+          <option value="">Elige una Base...</option>
+          <option value="HIV SABOGAL">HIV SABOGAL</option>
+          <option value="H III SUA-ANG">H III SUA-ANG</option>
+          <option value="H II M TORRES">H II M TORRES</option>
+          <option value="HOSPITAL ALMANZOR AGUINAGA">HOSPITAL ALMANZOR AGUINAGA</option>
+          <option value="G HN REBAGLIAT">G HN REBAGLIAT</option>
+          <option value="HIII YANAHUARA">HIII YANAHUARA</option>
+          <option value="HN C SEGUIN">HN C SEGUIN</option>
+          <option value="G.HN ALMENARA">G.HN ALMENARA</option>
+          <option value="D HIII IQUITOS">D HIII IQUITOS</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-amber-400 mb-1">3. Cargo *</label>
+        <select id="select-cargo" class="w-full bg-slate-900 border border-slate-700 text-white p-3 rounded-lg focus:outline-none focus:border-amber-400 text-sm">
+          <option value="">Elige tu Cargo...</option>
+          <option value="SECRETARIO">SECRETARIO</option>
+          <option value="DELEGADO">DELEGADO</option>
+          <option value="SECRETARIO DE CEN SINESSS">SECRETARIO DE CEN SINESSS</option>
+        </select>
+      </div>
+
+      <!-- SECCIÓN DINÁMICA DE PREGUNTAS Y OPCIONES EN EL FORMULARIO -->
+      <div id="contenedor-preguntas-form" class="space-y-4 border-t border-slate-800 pt-4">
+      </div>
+
+      <button type="button" onclick="registrarVotoLocal()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition text-sm mt-4">
+        REGISTRAR MIS VOTOS HABILITADOS
+      </button>
+    </div>
+  </main>
+
+  <!-- VISTA 3: CONECTOR GOOGLE FORMS / SHEETS -->
+  <main id="vista-gform" class="hidden max-w-2xl mx-auto">
+    <div class="bg-slate-950 border border-slate-800 rounded-xl p-6 shadow-2xl space-y-4">
+      <h2 class="text-amber-400 font-bold text-base border-b border-slate-800 pb-2">🔗 Conectar Google Sheets (Enlace CSV)</h2>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Pega aquí la URL publicada en la web como <b>CSV</b> desde tu Google Sheet de respuestas. El sistema solo actualizará las preguntas que tengas habilitadas en el tablero:
+      </p>
+      
+      <div class="space-y-2">
+        <input type="text" id="input-csv-url" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv" 
+               class="w-full bg-slate-900 border border-slate-700 text-xs p-3 rounded-lg text-emerald-400 focus:outline-none focus:border-indigo-500">
+        <button onclick="conectarGoogleSheets()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg text-xs transition">
+          CONECTAR Y SINCRONIZAR
+        </button>
+      </div>
+
+      <div id="status-conexion" class="text-xs p-3 rounded-lg bg-slate-900 border border-slate-800 text-slate-400">
+        Estado: Esperando URL...
+      </div>
+    </div>
+  </main>
+
+  <!-- MODAL EDITAR PREGUNTAS -->
+  <dialog id="modal-preguntas" class="bg-slate-950 border border-slate-800 text-slate-200 p-6 rounded-xl max-w-lg w-full backdrop:bg-black/80">
+    <h3 class="text-amber-400 font-bold mb-1 text-sm">Configurar Preguntas de la Plenaria (3 a 4)</h3>
+    <p class="text-[11px] text-slate-400 mb-3">Escribe una pregunta por línea tal como figuran en tu formulario.</p>
+    <textarea id="txt-preguntas" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-xs text-white h-40 mb-4 focus:outline-none focus:border-amber-400 font-mono"></textarea>
+    <div class="flex justify-end gap-2">
+      <button onclick="document.getElementById('modal-preguntas').close()" class="px-3 py-1.5 bg-slate-800 text-xs rounded">Cancelar</button>
+      <button onclick="guardarPreguntas()" class="px-3 py-1.5 bg-cyan-600 text-white text-xs font-bold rounded">Guardar Preguntas</button>
+    </div>
+  </dialog>
+
+  <!-- MODAL EDITAR PADRÓN -->
+  <dialog id="modal-padron" class="bg-slate-950 border border-slate-800 text-slate-200 p-6 rounded-xl max-w-lg w-full backdrop:bg-black/80">
+    <h3 class="text-amber-400 font-bold mb-1 text-sm">Editar Padrón de Integrantes</h3>
+    <p class="text-[11px] text-slate-400 mb-3">Escribe un nombre por línea tal como aparecen en tu Google Form.</p>
+    <textarea id="txt-padron" class="w-full bg-slate-900 border border-slate-700 p-3 rounded-lg text-xs text-white h-48 mb-4 focus:outline-none focus:border-amber-400 font-mono"></textarea>
+    <div class="flex justify-end gap-2">
+      <button onclick="document.getElementById('modal-padron').close()" class="px-3 py-1.5 bg-slate-800 text-xs rounded">Cancelar</button>
+      <button onclick="guardarPadron()" class="px-3 py-1.5 bg-emerald-600 text-white text-xs font-bold rounded">Guardar Padrón</button>
+    </div>
+  </dialog>
+
+  <!-- LÓGICA JAVASCRIPT -->
+  <script>
+    let padron = [
+      "SALINAS RAMIREZ, NANCY ELIZABET",
+      "MALLQUI ALCALA, YOLI ELVIRA",
+      "RAMIREZ VALVERDE, TANIA MARISOL",
+      "MORI PLASENCIA, ROSA ISABEL",
+      "SANCHEZ LLONTOP, SILVIA ESTHER",
+      "DEL CASTILLO RUBEN",
+      "OLVERA CARLOS",
+      "Burcios Carlos",
+      "Ramos Stanlin",
+      "Ramos Juana",
+      "Sanchez Paola",
+      "Manrique Meerson",
+      "Quinto Mercedes"
+    ];
+
+    const basesValidas = [
+      "HIV SABOGAL", "H III SUA-ANG", "H II M TORRES", 
+      "HOSPITAL ALMANZOR AGUINAGA", 
+      "G HN REBAGLIAT", "HIII YANAHUARA", "HN C SEGUIN", 
+      "G.HN ALMENARA", "D HIII IQUITOS"
+    ];
+
+    let preguntas = [
+      "1. ¿Aprueba el informe de gestión institucional del periodo 2025-2026?",
+      "2. ¿Autoriza la conformación de la comisión especial de estatutos?",
+      "3. ¿Aprueba el plan de lucha y movilización nacional propuesto por la junta?",
+      "4. ¿Ratifica los acuerdos adoptados en la última asamblea extraordinaria?"
+    ];
+
+    // Control de estado individual por pregunta (true = abierta, false = cerrada)
+    let estadoPreguntas = [true, true, true, true];
+
+    let preguntaActivaIndex = 0;
+    let votos = {}; 
+    let respuestasFormularioLocal = {}; 
+    let sheetURL = "";
+    let timerSync = null;
+    let votacionBloqueada = false;
+
+    const bc = new BroadcastChannel('votacion_channel_multi_ctrl');
+
+    window.addEventListener('DOMContentLoaded', () => {
+      let padronGuardado = localStorage.getItem('padron_voto_multi');
+      if (padronGuardado) {
+        try {
+          const parsed = JSON.parse(padronGuardado);
+          if (Array.isArray(parsed) && parsed.length > 0) padron = parsed;
+        } catch(e) {}
+      }
+
+      let preguntasGuardadas = localStorage.getItem('preguntas_voto_multi');
+      if (preguntasGuardadas) {
+        try {
+          const parsed = JSON.parse(preguntasGuardadas);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            preguntas = parsed;
+            // Asegurar que el arreglo de estados coincida en longitud
+            estadoPreguntas = preguntas.map((_, i) => estadoPreguntas[i] !== undefined ? estadoPreguntas[i] : true);
+          }
+        } catch(e) {}
+      }
+
+      let estadosGuardados = localStorage.getItem('estados_preguntas_multi');
+      if (estadosGuardados) {
+        try {
+          const parsed = JSON.parse(estadosGuardados);
+          if (Array.isArray(parsed)) estadoPreguntas = parsed;
+        } catch(e) {}
+      }
+
+      let votosGuardados = localStorage.getItem('votos_voto_multi');
+      if (votosGuardados) {
+        try { votos = JSON.parse(votosGuardados); } catch(e) {}
+      }
+
+      let bloqueadoGuardado = localStorage.getItem('votacion_bloqueada_multi');
+      if (bloqueadoGuardado !== null) {
+        votacionBloqueada = JSON.parse(bloqueadoGuardado);
+        actualizarEstadoBloqueoUI();
+      }
+
+      let urlGuardada = localStorage.getItem('csv_sheet_url_multi');
+      if (urlGuardada) {
+        document.getElementById('input-csv-url').value = urlGuardada;
+        sheetURL = urlGuardada;
+        iniciarPolingSheets();
+      }
+
+      iniciarReloj();
+      poblarDesplegableVotantes();
+      renderizarControlesPreguntas();
+      renderizarFormularioPreguntas();
+      renderizarTablero();
+    });
+
+    bc.onmessage = (event) => {
+      if (event.data.tipo === 'ACTUALIZACION') {
+        votos = event.data.votos;
+        renderizarTablero();
+      } else if (event.data.tipo === 'BLOQUEO') {
+        votacionBloqueada = event.data.bloqueado;
+        actualizarEstadoBloqueoUI();
+      } else if (event.data.tipo === 'ESTADO_PREGUNTAS') {
+        estadoPreguntas = event.data.estados;
+        renderizarControlesPreguntas();
+        renderizarFormularioPreguntas();
+        renderizarTablero();
+      }
+    };
+
+    function cambiarVista(idVista) {
+      ['vista-board', 'vista-form', 'vista-gform'].forEach(id => {
+        document.getElementById(id).classList.add('hidden');
+      });
+      document.getElementById(idVista).classList.remove('hidden');
+      if(idVista === 'vista-form') renderizarFormularioPreguntas();
+    }
+
+    function iniciarReloj() {
+      setInterval(() => {
+        const ahora = new Date();
+        document.getElementById('reloj-digital').innerText = ahora.toLocaleTimeString();
+        document.getElementById('fecha-actual').innerText = ahora.toLocaleDateString();
+      }, 1000);
+    }
+
+    function poblarDesplegableVotantes() {
+      const select = document.getElementById('select-votante');
+      select.innerHTML = '<option value="">Elige tu nombre...</option>';
+      padron.forEach(nombre => {
+        const opt = document.createElement('option');
+        opt.value = nombre;
+        opt.textContent = nombre;
+        select.appendChild(opt);
+      });
+    }
+
+    // Renderiza tanto los botones para VER pregunta como los interruptores para HABILITAR/CERRAR recepción
+    function renderizarControlesPreguntas() {
+      const tabsCont = document.getElementById('selector-preguntas-tabs');
+      const ctrlCont = document.getElementById('control-habilitacion-preguntas');
+      tabsCont.innerHTML = '';
+      ctrlCont.innerHTML = '';
+
+      preguntas.forEach((_, idx) => {
+        // 1. Botón de pestaña para ver resultados
+        const btnVer = document.createElement('button');
+        btnVer.onclick = () => { preguntaActivaIndex = idx; renderizarControlesPreguntas(); renderizarTablero(); };
+        btnVer.className = `px-3 py-1 text-xs rounded font-bold transition ${preguntaActivaIndex === idx ? 'bg-amber-600 text-white shadow-lg ring-1 ring-amber-300' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`;
+        btnVer.innerText = `P${idx + 1}`;
+        tabsCont.appendChild(btnVer);
+
+        // 2. Botón interruptor para habilitar/cerrar recepción de respuestas
+        const estaAbierta = estadoPreguntas[idx] !== false;
+        const btnHabilitar = document.createElement('button');
+        btnHabilitar.onclick = () => toggleEstadoPregunta(idx);
+        btnHabilitar.title = estaAbierta ? `Clic para cerrar recepción de P${idx + 1}` : `Clic para abrir recepción de P${idx + 1}`;
+        btnHabilitar.className = `px-2.5 py-1 text-[11px] rounded font-bold border transition flex items-center gap-1 ${
+          estaAbierta 
+            ? 'bg-emerald-950/80 text-emerald-400 border-emerald-700 hover:bg-emerald-900' 
+            : 'bg-rose-950/80 text-rose-400 border-rose-800 hover:bg-rose-900'
+        }`;
+        btnHabilitar.innerHTML = `${estaAbierta ? '🟢' : '🔴'} P${idx + 1}: ${estaAbierta ? 'Abierta' : 'Cerrada'}`;
+        ctrlCont.appendChild(btnHabilitar);
+      });
+    }
+
+    function toggleEstadoPregunta(idx) {
+      estadoPreguntas[idx] = !(estadoPreguntas[idx] !== false);
+      localStorage.setItem('estados_preguntas_multi', JSON.stringify(estadoPreguntas));
+      bc.postMessage({ tipo: 'ESTADO_PREGUNTAS', estados: estadoPreguntas });
+      renderizarControlesPreguntas();
+      renderizarFormularioPreguntas();
+      renderizarTablero();
+    }
+
+    function renderizarFormularioPreguntas() {
+      const contenedor = document.getElementById('contenedor-preguntas-form');
+      contenedor.innerHTML = '';
+      preguntas.forEach((preg, idx) => {
+        const estaAbierta = (estadoPreguntas[idx] !== false) && !votacionBloqueada;
+        const div = document.createElement('div');
+        div.className = `border p-3 rounded-lg space-y-2 transition ${
+          estaAbierta ? 'bg-slate-900 border-slate-800' : 'bg-slate-950/60 border-rose-900/40 opacity-60'
+        }`;
+
+        if (estaAbierta) {
+          const respActual = respuestasFormularioLocal[idx] || "";
+          div.innerHTML = `
+            <div class="flex justify-between items-center">
+              <label class="block text-xs font-bold text-amber-400">${preg}</label>
+              <span class="text-[10px] text-emerald-400 font-bold">🟢 Habilitada</span>
+            </div>
+            <div class="grid grid-cols-3 gap-2">
+              <button type="button" onclick="marcarRespuestaForm(${idx}, 'A FAVOR')" id="btn-p${idx}-favor" class="p-2 border border-emerald-600/50 bg-emerald-950/30 text-emerald-400 rounded font-bold text-[11px] hover:bg-emerald-900/50 transition ${respActual === 'A FAVOR' ? 'ring-2 ring-white' : ''}">A FAVOR</button>
+              <button type="button" onclick="marcarRespuestaForm(${idx}, 'EN CONTRA')" id="btn-p${idx}-contra" class="p-2 border border-rose-600/50 bg-rose-950/30 text-rose-400 rounded font-bold text-[11px] hover:bg-rose-900/50 transition ${respActual === 'EN CONTRA' ? 'ring-2 ring-white' : ''}">EN CONTRA</button>
+              <button type="button" onclick="marcarRespuestaForm(${idx}, 'ABSTENCION')" id="btn-p${idx}-abstencion" class="p-2 border border-amber-600/50 bg-amber-950/30 text-amber-400 rounded font-bold text-[11px] hover:bg-amber-900/50 transition ${respActual === 'ABSTENCION' ? 'ring-2 ring-white' : ''}">ABSTENCION</button>
+            </div>
+          `;
+        } else {
+          div.innerHTML = `
+            <div class="flex justify-between items-center">
+              <label class="block text-xs font-bold text-slate-400">${preg}</label>
+              <span class="text-[10px] text-rose-400 font-bold">🔒 Recepción Cerrada</span>
+            </div>
+            <p class="text-[11px] text-slate-500 italic">Esta pregunta no admite respuestas en este momento.</p>
+          `;
+        }
+        contenedor.appendChild(div);
+      });
+    }
+
+    function marcarRespuestaForm(indexPregunta, opcion) {
+      if (estadoPreguntas[indexPregunta] === false || votacionBloqueada) {
+        return alert("La recepción de votos para esta pregunta está cerrada.");
+      }
+      if(!respuestasFormularioLocal) respuestasFormularioLocal = {};
+      respuestasFormularioLocal[indexPregunta] = opcion;
+      renderizarFormularioPreguntas();
+    }
+
+    function registrarVotoLocal() {
+      if (votacionBloqueada) {
+        alert("La votación global está cerrada actualmente.");
+        return;
+      }
+      const nombre = document.getElementById('select-votante').value;
+      const base = document.getElementById('select-base').value;
+      const cargo = document.getElementById('select-cargo').value;
+
+      if (!nombre) return alert("Selecciona un Licenciado(A)");
+      if (!base) return alert("Selecciona una Base");
+      if (!cargo) return alert("Selecciona un Cargo");
+
+      // Filtrar solo las respuestas de las preguntas que están abiertas
+      let votosValidos = {};
+      for (let pIdx in respuestasFormularioLocal) {
+        if (estadoPreguntas[pIdx] !== false) {
+          votosValidos[pIdx] = respuestasFormularioLocal[pIdx];
+        }
+      }
+
+      if (Object.keys(votosValidos).length === 0) {
+        return alert("Selecciona al menos una opción en una pregunta que esté abierta.");
+      }
+
+      if (!votos[nombre]) {
+        votos[nombre] = { base: base, cargo: cargo, respuestas: {} };
+      }
+      votos[nombre].base = base;
+      votos[nombre].cargo = cargo;
+
+      for (let pIdx in votosValidos) {
+        votos[nombre].respuestas[pIdx] = votosValidos[pIdx];
+      }
+
+      guardarYNotificar();
+      alert("¡Votos registrados con éxito en las preguntas habilitadas!");
+    }
+
+    function guardarYNotificar() {
+      localStorage.setItem('votos_voto_multi', JSON.stringify(votos));
+      bc.postMessage({ tipo: 'ACTUALIZACION', votos: votos });
+      renderizarTablero();
+    }
+
+    function toggleBloqueoVotacion() {
+      votacionBloqueada = !votacionBloqueada;
+      localStorage.setItem('votacion_bloqueada_multi', JSON.stringify(votacionBloqueada));
+      bc.postMessage({ tipo: 'BLOQUEO', bloqueado: votacionBloqueada });
+      actualizarEstadoBloqueoUI();
+      renderizarFormularioPreguntas();
+      renderizarTablero();
+    }
+
+    function actualizarEstadoBloqueoUI() {
+      const btn = document.getElementById('btn-lock');
+      const txtEstado = document.getElementById('texto-estado-voto');
+      const indicador = document.getElementById('indicador-estado');
+
+      if (votacionBloqueada) {
+        if(btn) {
+          btn.innerText = "🔓 Abrir Todo";
+          btn.className = "px-3 py-1.5 bg-emerald-900/60 text-emerald-300 border border-emerald-700 rounded hover:bg-emerald-800 transition";
+        }
+        if(txtEstado) txtEstado.innerText = "• VOTACIÓN CERRADA";
+        if(indicador) indicador.className = "w-3 h-3 bg-rose-500 rounded-full";
+      } else {
+        if(btn) {
+          btn.innerText = "🔒 Cerrar Todo";
+          btn.className = "px-3 py-1.5 bg-rose-900/60 text-rose-300 border border-rose-700 rounded hover:bg-rose-800 transition";
+        }
+        if(txtEstado) txtEstado.innerText = "• SISTEMA ACTIVO";
+        if(indicador) indicador.className = "w-3 h-3 bg-emerald-500 rounded-full animate-pulse";
+      }
+    }
+
+    function renderizarTablero() {
+      if(preguntas[preguntaActivaIndex]) {
+        document.getElementById('titulo-asunto').innerText = preguntas[preguntaActivaIndex];
+      }
+
+      // Actualizar etiqueta visual de si esta pregunta específica recibe votos o no
+      const badge = document.getElementById('badge-estado-pregunta');
+      const estaAbierta = (estadoPreguntas[preguntaActivaIndex] !== false) && !votacionBloqueada;
+      if (estaAbierta) {
+        badge.className = "text-[11px] px-3 py-0.5 rounded-full font-bold bg-emerald-950 text-emerald-400 border border-emerald-700";
+        badge.innerText = "🟢 RECEPCIÓN HABILITADA PARA ESTA PREGUNTA";
+      } else {
+        badge.className = "text-[11px] px-3 py-0.5 rounded-full font-bold bg-rose-950 text-rose-400 border border-rose-700";
+        badge.innerText = "🔴 RECEPCIÓN CERRADA PARA ESTA PREGUNTA";
+      }
+
+      let favor = 0, contra = 0, abstencion = 0;
+      let countSec = 0, countDel = 0, countCen = 0;
+      let listFavor = [], listContra = [], listAbstencion = [], listSinVotar = [];
+      let agruparPorBase = {}; 
+
+      let totalAsistenciaGlobal = 0;
+
+      padron.forEach(nombre => {
+        const registro = votos[nombre];
+        let haVotadoAlgo = registro && registro.respuestas && Object.keys(registro.respuestas).length > 0;
+
+        if(haVotadoAlgo) totalAsistenciaGlobal++;
+
+        if (registro) {
+          const c = (registro.cargo && registro.cargo.trim() !== "") ? registro.cargo.trim().toUpperCase() : "SECRETARIO";
+          if (c.includes('CEN')) countCen++;
+          else if (c.includes('DELEGADO')) countDel++;
+          else countSec++;
+        }
+
+        if (registro && registro.respuestas && registro.respuestas[preguntaActivaIndex]) {
+          const v = registro.respuestas[preguntaActivaIndex];
+          let b = (registro.base && registro.base.trim() !== "") ? registro.base.trim().toUpperCase() : "OTRAS BASES";
+          const matchBase = basesValidas.find(vb => vb.toUpperCase() === b || b.includes(vb.toUpperCase()) || vb.toUpperCase().includes(b));
+          b = matchBase ? matchBase : "OTRAS BASES";
+
+          if (!agruparPorBase[b]) {
+            agruparPorBase[b] = { favor: [], contra: [], abstencion: [] };
+          }
+
+          const c = (registro.cargo && registro.cargo.trim() !== "") ? registro.cargo.trim().toUpperCase() : "SECRETARIO";
+          const detalleTexto = `${nombre} <span class="text-[10px] text-amber-400/90">(${c})</span>`;
+
+          if (v === 'A FAVOR') {
+            favor++;
+            listFavor.push(`• ${detalleTexto}`);
+            agruparPorBase[b].favor.push({nombre, cargo: c});
+          } else if (v === 'EN CONTRA') {
+            contra++;
+            listContra.push(`• ${detalleTexto}`);
+            agruparPorBase[b].contra.push({nombre, cargo: c});
+          } else if (v === 'ABSTENCION') {
+            abstencion++;
+            listAbstencion.push(`• ${detalleTexto}`);
+            agruparPorBase[b].abstencion.push({nombre, cargo: c});
+          }
+        } else {
+          listSinVotar.push(`• ${nombre}`);
+        }
+      });
+
+      document.getElementById('cnt-favor').innerText = favor;
+      document.getElementById('cnt-contra').innerText = contra;
+      document.getElementById('cnt-abstencion').innerText = abstencion;
+      document.getElementById('cnt-sec').innerText = countSec;
+      document.getElementById('cnt-del').innerText = countDel;
+      document.getElementById('cnt-cen').innerText = countCen;
+
+      const total = padron.length;
+      const sinVotar = total - (favor + contra + abstencion);
+      document.getElementById('cnt-sinvotar').innerText = sinVotar;
+      document.getElementById('cnt-total').innerText = total;
+      document.getElementById('asistencia-conteo').innerText = `${totalAsistenciaGlobal}/${total}`;
+
+      document.getElementById('lista-favor').innerHTML = listFavor.join('<br>') || '<span class="text-slate-600">Ninguno</span>';
+      document.getElementById('lista-contra').innerHTML = listContra.join('<br>') || '<span class="text-slate-600">Ninguno</span>';
+      document.getElementById('lista-abstencion').innerHTML = listAbstencion.join('<br>') || '<span class="text-slate-600">Ninguno</span>';
+      document.getElementById('lista-sinvotar').innerHTML = listSinVotar.join('<br>') || '<span class="text-slate-600">Ninguno</span>';
+
+      const contenedorBases = document.getElementById('contenedor-bases-detalle');
+      contenedorBases.innerHTML = '';
+      const basesKeys = Object.keys(agruparPorBase);
+
+      if (basesKeys.length === 0) {
+        contenedorBases.innerHTML = '<span class="text-slate-500 italic col-span-full">No hay votos registrados para esta pregunta todavía.</span>';
+      } else {
+        basesKeys.forEach(baseNombre => {
+          const data = agruparPorBase[baseNombre];
+          const totalBase = data.favor.length + data.contra.length + data.abstencion.length;
+
+          if (totalBase > 0) {
+            const renderItems = (lista) => {
+              if (lista.length === 0) return '<div class="text-slate-600 italic">Ninguno</div>';
+              return lista.map(item => `<div>• ${item.nombre} <span class="text-[10px] text-amber-400">(${item.cargo})</span></div>`).join('');
+            };
+
+            const tarjeta = document.createElement('div');
+            tarjeta.className = "bg-slate-950 border border-slate-800 rounded-lg p-3 space-y-2";
+            tarjeta.innerHTML = `
+              <div class="flex justify-between items-center border-b border-slate-800 pb-1">
+                <span class="text-xs font-bold text-amber-400">🏛️ ${baseNombre}</span>
+                <span class="text-[10px] text-slate-400">Total votos: <b>${totalBase}</b></span>
+              </div>
+              <div class="space-y-1 text-[11px]">
+                <div class="text-emerald-400 font-bold">A Favor (${data.favor.length}):</div>
+                <div class="pl-2 text-emerald-300/90">${renderItems(data.favor)}</div>
+                <div class="text-rose-400 font-bold mt-1">En Contra (${data.contra.length}):</div>
+                <div class="pl-2 text-rose-300/90">${renderItems(data.contra)}</div>
+                <div class="text-amber-400 font-bold mt-1">Abstención (${data.abstencion.length}):</div>
+                <div class="pl-2 text-amber-300/90">${renderItems(data.abstencion)}</div>
+              </div>
+            `;
+            contenedorBases.appendChild(tarjeta);
+          }
+        });
+      }
+
+      renderizarReporteGeneral();
+    }
+
+    function renderizarReporteGeneral() {
+      const contenedorReporte = document.getElementById('contenedor-reporte-general');
+      contenedorReporte.innerHTML = '';
+
+      preguntas.forEach((pregTexto, pIdx) => {
+        let fv = 0, cv = 0, av = 0;
+        let detalleBasesP = {};
+
+        padron.forEach(nombre => {
+          const reg = votos[nombre];
+          if (reg && reg.respuestas && reg.respuestas[pIdx]) {
+            const v = reg.respuestas[pIdx];
+            let b = reg.base ? reg.base.toUpperCase() : "OTRAS BASES";
+            const matchB = basesValidas.find(vb => vb.toUpperCase() === b || b.includes(vb.toUpperCase()));
+            b = matchB ? matchB : "OTRAS BASES";
+
+            if(!detalleBasesP[b]) detalleBasesP[b] = {favor: [], contra: [], abstencion: []};
+
+            const infoVotante = `${nombre} (${reg.cargo || 'SECRETARIO'})`;
+            if(v === 'A FAVOR') { fv++; detalleBasesP[b].favor.push(infoVotante); }
+            else if(v === 'EN CONTRA') { cv++; detalleBasesP[b].contra.push(infoVotante); }
+            else if(v === 'ABSTENCION') { av++; detalleBasesP[b].abstencion.push(infoVotante); }
+          }
+        });
+
+        const card = document.createElement('div');
+        card.className = "bg-slate-950 border border-slate-800 rounded-lg p-4 space-y-3";
+        
+        let htmlBases = "";
+        Object.keys(detalleBasesP).forEach(bName => {
+          const dt = detalleBasesP[bName];
+          htmlBases += `
+            <div class="bg-slate-900/80 p-2 rounded border border-slate-800 text-[11px] space-y-1">
+              <div class="font-bold text-amber-400">🏛️ ${bName}</div>
+              <div class="text-emerald-400">A Favor (${dt.favor.length}): <span class="text-slate-300">${dt.favor.join(', ') || 'Ninguno'}</span></div>
+              <div class="text-rose-400">En Contra (${dt.contra.length}): <span class="text-slate-300">${dt.contra.join(', ') || 'Ninguno'}</span></div>
+              <div class="text-amber-400">Abstención (${dt.abstencion.length}): <span class="text-slate-300">${dt.abstencion.join(', ') || 'Ninguno'}</span></div>
+            </div>
+          `;
+        });
+
+        const estadoIcon = (estadoPreguntas[pIdx] !== false) ? '🟢 Abierta' : '🔴 Cerrada';
+
+        card.innerHTML = `
+          <div class="flex flex-wrap justify-between items-center border-b border-slate-800 pb-2 gap-2">
+            <div>
+              <span class="text-[10px] text-slate-400 mr-2">[${estadoIcon}]</span>
+              <h4 class="inline text-xs font-bold text-amber-400">${pregTexto}</h4>
+            </div>
+            <div class="flex gap-3 text-[11px]">
+              <span class="text-emerald-400">A Favor: <b>${fv}</b></span>
+              <span class="text-rose-400">En Contra: <b>${cv}</b></span>
+              <span class="text-amber-400">Abstención: <b>${av}</b></span>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+            ${htmlBases || '<span class="text-slate-500 italic text-xs">Sin votos registrados para esta pregunta.</span>'}
+          </div>
+        `;
+        contenedorReporte.appendChild(card);
+      });
+    }
+
+    function conectarGoogleSheets() {
+      const url = document.getElementById('input-csv-url').value.trim();
+      if (!url) return alert("Pega una URL válida de Google Sheets");
+      
+      sheetURL = url;
+      localStorage.setItem('csv_sheet_url_multi', url);
+      iniciarPolingSheets();
+      alert("¡Google Sheets conectado correctamente!");
+    }
+
+    function iniciarPolingSheets() {
+      if (timerSync) clearInterval(timerSync);
+      consultarSheet();
+      timerSync = setInterval(consultarSheet, 3000);
+    }
+
+    async function consultarSheet() {
+      const status = document.getElementById('status-conexion');
+      if (!sheetURL) return;
+
+      try {
+        const fetchURL = `${sheetURL}${sheetURL.includes('?') ? '&' : '?'}nocache=${new Date().getTime()}`;
+        const res = await fetch(fetchURL);
+        const data = await res.text();
+        
+        procesarCSV(data);
+        if(status) status.innerText = `🟢 Sincronizado en tiempo real (${new Date().toLocaleTimeString()})`;
+      } catch (err) {
+        if(status) status.innerText = `🔴 Error de sincronización: Asegúrate que la hoja esté 'Publicada en la web' como CSV.`;
+      }
+    }
+
+    // ANALIZADOR RESPETANDO LA HABILITACIÓN POR PREGUNTA
+    function procesarCSV(text) {
+      if (votacionBloqueada) return;
+      const lineas = text.split('\n');
+      if (lineas.length < 2) return;
+
+      lineas.slice(1).forEach(linea => {
+        const cols = linea.split(',').map(c => c.replace(/^"|"$/g, '').trim());
+        if (cols.length >= 2) {
+          let nombreEncontrado = "";
+          let baseEncontrada = "";
+          let cargoEncontrado = "SECRETARIO"; 
+          let respuestasFila = {};
+
+          cols.forEach(colVal => {
+            const valUp = colVal.toUpperCase();
+            
+            const coincidePadron = padron.find(p => p.toLowerCase() === colVal.toLowerCase() || p.toLowerCase().includes(colVal.toLowerCase()) || colVal.toLowerCase().includes(p.toLowerCase()));
+            if (coincidePadron && !nombreEncontrado) {
+              nombreEncontrado = coincidePadron;
+            }
+
+            if (valUp === 'SECRETARIO' || valUp === 'DELEGADO' || valUp.includes('CEN')) {
+              cargoEncontrado = colVal;
+            }
+
+            const coincideBase = basesValidas.find(vb => vb.toUpperCase() === valUp || valUp.includes(vb.toUpperCase()) || vb.toUpperCase().includes(valUp));
+            if (coincideBase && !baseEncontrada) {
+              baseEncontrada = coincideBase;
+            }
+
+            if (valUp === 'A FAVOR' || valUp === 'EN CONTRA' || valUp === 'ABSTENCION' || valUp === 'ABTENCION') {
+              const votoLimpio = valUp.replace('ABTENCION', 'ABSTENCION');
+              let proxIndex = Object.keys(respuestasFila).length;
+              if(proxIndex < preguntas.length) {
+                respuestasFila[proxIndex] = votoLimpio;
+              }
+            }
+          });
+
+          if (!baseEncontrada && cols.length >= 3) {
+            for (let i = 1; i < cols.length; i++) {
+              const posibleBase = cols[i].toUpperCase();
+              const matchB = basesValidas.find(vb => vb.toUpperCase() === posibleBase || posibleBase.includes(vb.toUpperCase()));
+              if (matchB) { baseEncontrada = matchB; break; }
+            }
+          }
+
+          if (nombreEncontrado && Object.keys(respuestasFila).length > 0) {
+            if(!votos[nombreEncontrado]) {
+              votos[nombreEncontrado] = { base: baseEncontrada ? baseEncontrada.toUpperCase() : "OTRAS BASES", cargo: cargoEncontrado.toUpperCase(), respuestas: {} };
+            }
+            votos[nombreEncontrado].base = baseEncontrada ? baseEncontrada.toUpperCase() : votos[nombreEncontrado].base;
+            votos[nombreEncontrado].cargo = cargoEncontrado.toUpperCase();
+            
+            // Solo guardar o actualizar las respuestas de las preguntas cuya recepción esté HABILITADA
+            for(let rIdx in respuestasFila) {
+              if (estadoPreguntas[rIdx] !== false) {
+                votos[nombreEncontrado].respuestas[rIdx] = respuestasFila[rIdx];
+              }
+            }
+          }
+        }
+      });
+
+      guardarYNotificar();
+    }
+
+    function reiniciarVotacion() {
+      if (confirm("¿Deseas reiniciar todos los votos a 0 y limpiar el sistema?")) {
+        votos = {};
+        sheetURL = "";
+        if (timerSync) clearInterval(timerSync);
+        
+        localStorage.removeItem('votos_voto_multi');
+        localStorage.removeItem('csv_sheet_url_multi');
+        
+        document.getElementById('input-csv-url').value = "";
+        document.getElementById('status-conexion').innerText = "Estado: Desconectado / Esperando URL...";
+        document.getElementById('select-votante').value = "";
+        document.getElementById('select-base').value = "";
+        document.getElementById('select-cargo').value = "";
+        respuestasFormularioLocal = {};
+
+        renderizarFormularioPreguntas();
+        guardarYNotificar();
+        alert("¡Votos reseteados por completo!");
+      }
+    }
+
+    function simularVotacion() {
+      const opciones = ["A FAVOR", "EN CONTRA", "ABSTENCION"];
+      const bases = ["HIV SABOGAL", "H III SUA-ANG", "H II M TORRES", "HOSPITAL ALMANZOR AGUINAGA", "G HN REBAGLIAT", "HIII YANAHUARA", "HN C SEGUIN", "G.HN ALMENARA", "D HIII IQUITOS"];
+      const cargos = ["SECRETARIO", "DELEGADO", "SECRETARIO DE CEN SINESSS"];
+      
+      padron.forEach(n => {
+        if(!votos[n]) votos[n] = { base: "", cargo: "", respuestas: {} };
+        votos[n].base = bases[Math.floor(Math.random() * bases.length)];
+        votos[n].cargo = cargos[Math.floor(Math.random() * cargos.length)];
+        
+        preguntas.forEach((_, pIdx) => {
+          // Simula únicamente en las preguntas abiertas
+          if (estadoPreguntas[pIdx] !== false) {
+            votos[n].respuestas[pIdx] = opciones[Math.floor(Math.random() * opciones.length)];
+          }
+        });
+      });
+      guardarYNotificar();
+      alert("¡Simulación realizada en las preguntas habilitadas!");
+    }
+
+    function abrirModalPreguntas() {
+      document.getElementById('txt-preguntas').value = preguntas.join('\n');
+      document.getElementById('modal-preguntas').showModal();
+    }
+
+    function guardarPreguntas() {
+      const lineas = document.getElementById('txt-preguntas').value.split('\n').map(l => l.trim()).filter(l => l);
+      if (lineas.length > 0) {
+        preguntas = lineas;
+        estadoPreguntas = preguntas.map(() => true);
+        localStorage.setItem('preguntas_voto_multi', JSON.stringify(preguntas));
+        localStorage.setItem('estados_preguntas_multi', JSON.stringify(estadoPreguntas));
+        preguntaActivaIndex = 0;
+        renderizarControlesPreguntas();
+        renderizarFormularioPreguntas();
+        renderizarTablero();
+        alert("¡Preguntas actualizadas con éxito!");
+      }
+      document.getElementById('modal-preguntas').close();
+    }
+
+    function abrirModalPadron() {
+      document.getElementById('txt-padron').value = padron.join('\n');
+      document.getElementById('modal-padron').showModal();
+    }
+
+    function guardarPadron() {
+      const lineas = document.getElementById('txt-padron').value.split('\n').map(l => l.trim()).filter(l => l);
+      if (lineas.length > 0) {
+        padron = lineas;
+        localStorage.setItem('padron_voto_multi', JSON.stringify(padron));
+        poblarDesplegableVotantes();
+        renderizarTablero();
+      }
+      document.getElementById('modal-padron').close();
+    }
+  </script>
+</body>
+</html>
